@@ -5,11 +5,10 @@ namespace App\IbexaTests\PostPublicationBundle\EventListener;
 use App\IbexaTests\PostPublicationBundle\Service\PostPublicationService;
 use eZ\Publish\API\Repository\Events\Content\PublishVersionEvent;
 use eZ\Publish\API\Repository\LanguageService;
-use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class PublicationSubscriber implements EventSubscriberInterface, LoggerAwareInterface
+class PublicationSubscriber implements EventSubscriberInterface
 {
     /**
      * @var PostPublicationService
@@ -39,56 +38,59 @@ class PublicationSubscriber implements EventSubscriberInterface, LoggerAwareInte
      */
     public $logger;
 
-    public function __construct(PostPublicationService $postPublicationService, LanguageService $languageService, array $targetClasses, string $targetContentLanguage, string $newTranslationCode)
+    public function __construct(PostPublicationService $postPublicationService, LanguageService $languageService, LoggerInterface $logger, array $targetClasses, string $targetContentLanguage, string $newTranslationCode)
     {
         $this->postPublicationService = $postPublicationService;
         $this->languageService = $languageService;
         $this->targetClasses = $targetClasses;
+        $this->logger = $logger;
         $this->targetContentLanguage = $targetContentLanguage;
         $this->newTranslationCode = $newTranslationCode;
     }
 
     public static function getSubscribedEvents(): array
     {
-        return [PublishVersionEvent::class => ['onNewVersion', 0]];
+        return [
+            PublishVersionEvent::class => [
+                ['createNewTranslation', 0],
+                ['notifyRemoteService', 5],
+            ],
+        ];
     }
 
-    public function setLogger(LoggerInterface $logger): void
+    public function notifyRemoteService(PublishVersionEvent $event)
     {
-        $this->logger = $logger;
-    }
-
-    public function onNewVersion(PublishVersionEvent $event)
-    {
-        if ($this->hasNotifcation($event)) {
+        if ($this->isContentEligible($event)) {
             $datas = ['name' => $event->getContent()->getName(),
                 'contentId' => $event->getContent()->id,
-                'locationId' => $event->getContent()->contentInfo->mainLocationId, //
+                'locationId' => $event->getContent()->contentInfo->mainLocationId,
                 'languageCode' => $event->getVersionInfo()->initialLanguageCode, ];
 
             if ($this->postPublicationService->newVersionNotification($datas)) {
                 $this->logger->info('Notification Sent', ['content_id' => $event->getContent()->id]);
-            }
-            if ($this->isNewLanguageAvailable()) {
-                if ($this->postPublicationService->newTranslation($this->newTranslationCode, $event->getContent())) {
-                    $this->logger->info('Content Translated', ['content_id' => $event->getContent()->id]);
-                } else {
-                    $this->logger->error('New translation could not be created', ['content_id' => $event->getContent()->id]);
-                }
-            } else {
-                $this->logger->critical('New Target Language is not registered in Ibexa Instance. Please add required language', ['new_language_code' => $this->newTranslationCode]);
             }
         } else {
             $this->logger->debug('No notification');
         }
     }
 
+    public function createNewTranslation(PublishVersionEvent $event)
+    {
+        if ($this->isContentEligible($event) && $this->isNewLanguageAvailable()) {
+            if ($this->postPublicationService->newTranslation($this->newTranslationCode, $event->getContent())) {
+                $this->logger->info('Content Translated', ['content_id' => $event->getContent()->id]);
+            } else {
+                $this->logger->error('New translation could not be created', ['content_id' => $event->getContent()->id]);
+            }
+        } else {
+            $this->logger->critical('New Target Language is not registered in Ibexa Instance. Please add required language', ['new_language_code' => $this->newTranslationCode]);
+        }
+    }
+
     /**
-     * Checks if currently published content matches the requirements
-     * @param PublishVersionEvent $event
-     * @return bool
+     * Checks if currently published content matches the requirements.
      */
-    private function hasNotifcation(PublishVersionEvent $event): bool
+    private function isContentEligible(PublishVersionEvent $event): bool
     {
         if (\in_array($event->getContent()->getContentType()->identifier, $this->targetClasses)) {
             if ($event->getVersionInfo()->initialLanguageCode === $this->targetContentLanguage) {

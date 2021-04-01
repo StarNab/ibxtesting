@@ -5,12 +5,11 @@ namespace App\IbexaTests\PostPublicationBundle\Service;
 use eZ\Publish\API\Repository\ContentService;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use EzSystems\EzPlatformAdminUi\Event\ContentProxyTranslateEvent;
-use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class PostPublicationService implements LoggerAwareInterface
+class PostPublicationService
 {
     /**
      * @var HttpClientInterface
@@ -33,51 +32,43 @@ class PostPublicationService implements LoggerAwareInterface
 
     private $notifyEndPoint;
 
-    public function __construct(HttpClientInterface $client, ContentService $contentService, EventDispatcherInterface $eventDispatcher, string $notifyHost, string $notifyEndPoint)
+    public function __construct(HttpClientInterface $client, ContentService $contentService, LoggerInterface $logger, EventDispatcherInterface $eventDispatcher, string $notifyHost, string $notifyEndPoint)
     {
         $this->client = $client;
         $this->contentService = $contentService;
         $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
 
         $this->notifyHost = $notifyHost;
         $this->notifyEndPoint = $notifyEndPoint;
     }
 
-    public function setLogger(LoggerInterface $logger): void
-    {
-        $this->logger = $logger;
-    }
-
     /**
-     *
-     * Send notification to remote server
-     * @param array $datas
-     * @return bool
+     * Send notification to remote server.
      * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
      */
     public function newVersionNotification(array $datas): bool
     {
-        $datas = \GuzzleHttp\json_encode($datas);
+        $jsonDatas = json_encode($datas);
         try {
-            $response = $this->client->request('GET', $this->notifyHost . $this->notifyEndPoint, ['body' => $datas]);
+            $response = $this->client->request('GET', $this->notifyHost . $this->notifyEndPoint, ['body' => $jsonDatas]);
 
             return $this->handleNotificationResponse($response);
         } catch (\Exception $e) {
+            $this->logger->error('New content notification failed', ['datas' => $datas, 'exception' => $e]);
+
             return false;
         }
     }
 
     /**
-     * Add new translation for currently published content
-     * @param string $newLanguageCode
-     * @param Content $content
-     * @return bool
+     * Add new translation for currently published content.
      */
     public function newTranslation(string $newLanguageCode, Content $content): bool
     {
         try {
             /** @var \EzSystems\EzPlatformAdminUi\Event\ContentProxyTranslateEvent $event */
-            $event = $this->eventDispatcher->dispatch(
+            $this->eventDispatcher->dispatch(
                 new ContentProxyTranslateEvent(
                     $content->id,
                     $content->contentInfo->mainLanguageCode,
