@@ -1,0 +1,5 @@
+# My intent was to move as much as possible of the Services configuration in this file. But run through some issues.
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
