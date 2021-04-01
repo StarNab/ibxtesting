@@ -5,11 +5,10 @@ namespace App\IbexaTests\PostPublicationBundle\EventListener;
 use App\IbexaTests\PostPublicationBundle\Service\PostPublicationService;
 use eZ\Publish\API\Repository\Events\Content\PublishVersionEvent;
 use eZ\Publish\API\Repository\LanguageService;
-use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class PublicationSubscriber implements EventSubscriberInterface, LoggerAwareInterface
+class PublicationSubscriber implements EventSubscriberInterface
 {
     /**
      * @var PostPublicationService
@@ -39,11 +38,12 @@ class PublicationSubscriber implements EventSubscriberInterface, LoggerAwareInte
      */
     public $logger;
 
-    public function __construct(PostPublicationService $postPublicationService, LanguageService $languageService, array $targetClasses, string $targetContentLanguage, string $newTranslationCode)
+    public function __construct(PostPublicationService $postPublicationService, LanguageService $languageService, LoggerInterface $logger, array $targetClasses, string $targetContentLanguage, string $newTranslationCode)
     {
         $this->postPublicationService = $postPublicationService;
         $this->languageService = $languageService;
         $this->targetClasses = $targetClasses;
+        $this->logger = $logger;
         $this->targetContentLanguage = $targetContentLanguage;
         $this->newTranslationCode = $newTranslationCode;
     }
@@ -51,11 +51,6 @@ class PublicationSubscriber implements EventSubscriberInterface, LoggerAwareInte
     public static function getSubscribedEvents(): array
     {
         return [PublishVersionEvent::class => ['onNewVersion', 0]];
-    }
-
-    public function setLogger(LoggerInterface $logger): void
-    {
-        $this->logger = $logger;
     }
 
     public function onNewVersion(PublishVersionEvent $event)

@@ -5,12 +5,11 @@ namespace App\IbexaTests\PostPublicationBundle\Service;
 use eZ\Publish\API\Repository\ContentService;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use EzSystems\EzPlatformAdminUi\Event\ContentProxyTranslateEvent;
-use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class PostPublicationService implements LoggerAwareInterface
+class PostPublicationService
 {
     /**
      * @var HttpClientInterface
@@ -33,19 +32,15 @@ class PostPublicationService implements LoggerAwareInterface
 
     private $notifyEndPoint;
 
-    public function __construct(HttpClientInterface $client, ContentService $contentService, EventDispatcherInterface $eventDispatcher, string $notifyHost, string $notifyEndPoint)
+    public function __construct(HttpClientInterface $client, ContentService $contentService, LoggerInterface $logger, EventDispatcherInterface $eventDispatcher, string $notifyHost, string $notifyEndPoint)
     {
         $this->client = $client;
         $this->contentService = $contentService;
         $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
 
         $this->notifyHost = $notifyHost;
         $this->notifyEndPoint = $notifyEndPoint;
-    }
-
-    public function setLogger(LoggerInterface $logger): void
-    {
-        $this->logger = $logger;
     }
 
     /**
@@ -57,9 +52,9 @@ class PostPublicationService implements LoggerAwareInterface
      */
     public function newVersionNotification(array $datas): bool
     {
-        $datas = \GuzzleHttp\json_encode($datas);
+        $jsonDatas = json_encode($datas);
         try {
-            $response = $this->client->request('GET', $this->notifyHost . $this->notifyEndPoint, ['body' => $datas]);
+            $response = $this->client->request('GET', $this->notifyHost . $this->notifyEndPoint, ['body' => $jsonDatas]);
 
             return $this->handleNotificationResponse($response);
         } catch (\Exception $e) {
@@ -77,7 +72,7 @@ class PostPublicationService implements LoggerAwareInterface
     {
         try {
             /** @var \EzSystems\EzPlatformAdminUi\Event\ContentProxyTranslateEvent $event */
-            $event = $this->eventDispatcher->dispatch(
+            $this->eventDispatcher->dispatch(
                 new ContentProxyTranslateEvent(
                     $content->id,
                     $content->contentInfo->mainLanguageCode,
