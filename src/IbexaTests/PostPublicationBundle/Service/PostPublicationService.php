@@ -44,10 +44,7 @@ class PostPublicationService
     }
 
     /**
-     *
-     * Send notification to remote server
-     * @param array $datas
-     * @return bool
+     * Send notification to remote server.
      * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
      */
     public function newVersionNotification(array $datas): bool
@@ -63,10 +60,7 @@ class PostPublicationService
     }
 
     /**
-     * Add new translation for currently published content
-     * @param string $newLanguageCode
-     * @param Content $content
-     * @return bool
+     * Add new translation for currently published content.
      */
     public function newTranslation(string $newLanguageCode, Content $content): bool
     {
