@@ -1,0 +1,22 @@
+{
+  "name": "starnab/postpublicationbundle",
+  "description": "A Bundle to plug extra process upon publication of content",
+  "homepage": "https://github.com/StarNab/ibxtesting",
+  "keywords": [
+    "Ibexa",
+    "eZPlaform",
+    "Bundle"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Nabil Alimi"
+    }
+  ],
+  "require": {
+    "php": "^7.3",
+    "symfony/event-dispatcher": "@dev",
+    "symfony/http-client": "^v4.4.21",
+    "ezsystems/ezplatform-kernel": "^1.2.5"
+  }
+}
