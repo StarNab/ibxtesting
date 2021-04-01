@@ -8,10 +8,9 @@ use eZ\Publish\API\Repository\Events\Content\PublishVersionEvent;
 use eZ\Publish\API\Repository\LanguageService;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\VersionInfo;
-use FOS\HttpCache\Event;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpKernel\Log\Logger;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpKernel\Log\Logger;
 
 class PublicationSubscriberTest extends TestCase
 {
@@ -45,6 +44,5 @@ class PublicationSubscriberTest extends TestCase
 
         // I wasn't able to complete a working unit test in this case
         $this->assertTrue(true);
-
     }
 }

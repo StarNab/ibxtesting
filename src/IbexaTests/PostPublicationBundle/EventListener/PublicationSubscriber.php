@@ -58,7 +58,7 @@ class PublicationSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function createNewTranslation(PublishVersionEvent $event)
+    public function notifyRemoteService(PublishVersionEvent $event)
     {
         if ($this->isContentEligible($event)) {
             $datas = ['name' => $event->getContent()->getName(),
@@ -69,21 +69,12 @@ class PublicationSubscriber implements EventSubscriberInterface
             if ($this->postPublicationService->newVersionNotification($datas)) {
                 $this->logger->info('Notification Sent', ['content_id' => $event->getContent()->id]);
             }
-            if ($this->isNewLanguageAvailable()) {
-                if ($this->postPublicationService->newTranslation($this->newTranslationCode, $event->getContent())) {
-                    $this->logger->info('Content Translated', ['content_id' => $event->getContent()->id]);
-                } else {
-                    $this->logger->error('New translation could not be created', ['content_id' => $event->getContent()->id]);
-                }
-            } else {
-                $this->logger->critical('New Target Language is not registered in Ibexa Instance. Please add required language', ['new_language_code' => $this->newTranslationCode]);
-            }
         } else {
             $this->logger->debug('No notification');
         }
     }
 
-    public function notifyRemoteService(PublishVersionEvent $event)
+    public function createNewTranslation(PublishVersionEvent $event)
     {
         if ($this->isContentEligible($event) && $this->isNewLanguageAvailable()) {
             if ($this->postPublicationService->newTranslation($this->newTranslationCode, $event->getContent())) {

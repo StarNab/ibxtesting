@@ -55,7 +55,8 @@ class PostPublicationService
 
             return $this->handleNotificationResponse($response);
         } catch (\Exception $e) {
-            $this->logger->error("New content notification failed", ['datas' => $datas, 'exception' => $e]);
+            $this->logger->error('New content notification failed', ['datas' => $datas, 'exception' => $e]);
+
             return false;
         }
     }

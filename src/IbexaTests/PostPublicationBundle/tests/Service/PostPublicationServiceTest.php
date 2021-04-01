@@ -5,7 +5,6 @@ namespace App\IbexaTests\Tests\Service;
 use App\IbexaTests\PostPublicationBundle\Service\PostPublicationService;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use PHPUnit\Framework\TestCase;
-use http\Client\Response;
 
 class PostPublicationServiceTest extends TestCase
 {
